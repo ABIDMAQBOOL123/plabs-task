@@ -3,20 +3,31 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 
-dotenv.config(); 
-
+dotenv.config();
 
 exports.register = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
 
-    
+    // Trim input to remove extra spaces
+    username = username?.trim();
+    password = password?.trim();
+
+    // Validate input fields
+    if (!username || !password) {
+      return res.status(400).send("Username and password are required");
+    }
+
+    if (password.length < 6) {
+      return res.status(400).send("Password must be at least 6 characters long");
+    }
+
+    // Check if user already exists
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send("Username already exists");
     }
 
-    
     const user = new User({ username, password });
     await user.save();
 
@@ -27,22 +38,27 @@ exports.register = async (req, res) => {
   }
 };
 
-
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    let { username, password } = req.body;
 
-    
+    // Trim input to remove extra spaces
+    username = username?.trim();
+    password = password?.trim();
+
+    // Validate input fields
+    if (!username || !password) {
+      return res.status(400).send("Username and password are required");
+    }
+
     const user = await User.findOne({ username }).lean();
     if (!user) {
       return res.status(400).send("Invalid credentials");
     }
 
-
     console.log("Entered Password:", password);
     console.log("Stored Hashed Password:", user.password);
 
-    
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("Password Match:", isMatch);
 
@@ -50,16 +66,15 @@ exports.login = async (req, res) => {
       return res.status(400).send("Invalid credentials");
     }
 
-    
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
-
+    // Set token in HTTP-only cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, 
+      maxAge: 24 * 60 * 60 * 1000, // 1 day expiration
     });
 
     res.status(200).send("Login successful");
