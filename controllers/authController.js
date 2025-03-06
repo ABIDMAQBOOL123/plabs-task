@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
       expiresIn: "1d",
     });
 
-    // Set token in HTTP-only cookie
+    
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

@@ -1,10 +1,11 @@
 const Todo = require("../models/Todo");
-
+const mongoose = require("mongoose");
 
 exports.createTodo = async (req, res) => {
   try {
     const { title, description } = req.body;
 
+    
     if (!title || !description) {
       return res.status(400).json({ error: "Title and description are required" });
     }
@@ -26,7 +27,15 @@ exports.createTodo = async (req, res) => {
 
 exports.getTodos = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: "Unauthorized: User ID missing" });
+    }
+
     const todos = await Todo.find({ user: req.user.id });
+
+    if (!todos.length) {
+      return res.status(404).json({ error: "No todos found" });
+    }
 
     res.status(200).json(todos);
   } catch (err) {
@@ -35,16 +44,19 @@ exports.getTodos = async (req, res) => {
   }
 };
 
-
 exports.updateTodo = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, completed } = req.body;
 
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid todo ID" });
+    }
+
     if (!title && !description && completed === undefined) {
       return res.status(400).json({ error: "No valid fields provided for update" });
     }
-
 
     const todo = await Todo.findOne({ _id: id, user: req.user.id });
 
@@ -54,7 +66,12 @@ exports.updateTodo = async (req, res) => {
 
     if (title) todo.title = title;
     if (description) todo.description = description;
-    if (completed !== undefined) todo.completed = completed;
+    if (completed !== undefined) {
+      if (typeof completed !== "boolean") {
+        return res.status(400).json({ error: "Invalid value for completed field" });
+      }
+      todo.completed = completed;
+    }
 
     await todo.save();
 
@@ -65,12 +82,15 @@ exports.updateTodo = async (req, res) => {
   }
 };
 
-
 exports.deleteTodo = async (req, res) => {
   try {
     const { id } = req.params;
 
-    
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid todo ID" });
+    }
+
     const todo = await Todo.findOne({ _id: id, user: req.user.id });
 
     if (!todo) {

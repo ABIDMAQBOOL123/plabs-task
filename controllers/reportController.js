@@ -13,11 +13,14 @@ exports.generateReport = async (req, res) => {
     const todos = await Todo.find({ user: req.user.id });
 
     
+    if (!todos || todos.length === 0) {
+      return res.status(404).json({ error: "No todos found for this user." });
+    }
+
     const totalTodos = todos.length;
     const completedTodos = todos.filter(todo => todo.completed).length;
     const pendingTodos = totalTodos - completedTodos;
 
-    
     const report = {
       totalTodos,
       completedTodos,
@@ -32,7 +35,6 @@ exports.generateReport = async (req, res) => {
       })),
     };
 
-    
     res.status(200).json({ message: "Report generated successfully", report });
   } catch (err) {
     console.error("Error generating report:", err);
