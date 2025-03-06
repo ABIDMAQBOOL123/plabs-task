@@ -9,11 +9,11 @@ exports.register = async (req, res) => {
   try {
     let { username, password } = req.body;
 
-    // Trim input to remove extra spaces
+    
     username = username?.trim();
     password = password?.trim();
 
-    // Validate input fields
+
     if (!username || !password) {
       return res.status(400).send("Username and password are required");
     }
@@ -22,7 +22,7 @@ exports.register = async (req, res) => {
       return res.status(400).send("Password must be at least 6 characters long");
     }
 
-    // Check if user already exists
+
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send("Username already exists");
@@ -42,11 +42,11 @@ exports.login = async (req, res) => {
   try {
     let { username, password } = req.body;
 
-    // Trim input to remove extra spaces
+
     username = username?.trim();
     password = password?.trim();
 
-    // Validate input fields
+
     if (!username || !password) {
       return res.status(400).send("Username and password are required");
     }
